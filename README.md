@@ -113,11 +113,11 @@ def build_handler(plugins):
 | v1 | 296 | Plugin / EventManager / `next()` | 中间件链的秘密就是 `next()` | `chat_pipeline.go:11-68` |
 | v2 | 470 | 查询理解（LLM 改写+意图分类） | 检索前先花一次调用换准确率 | `query_understand.go:58-161` |
 | v3 | 685 | 混合检索 + 归一化 + RRF + 查询扩展 | RRF 只看排名不看分数 | `search.go`、`knowledgebase_search_fusion.go`、`normalizer.go`、`query_expansion.go` |
-| v4 | ~420 | 复合分数精排 + MMR 多样性 | 精排在合并之前，为效率而设计 | `rerank.go` |
+| v4 | 818 | 复合分数精排 + MMR 多样性 | 精排在合并之前，为效率而设计 | `rerank.go` |
 | v5 | ~550 | 父块还原/重叠拼接/FAQ/短块扩展 | 合并阶段把碎片拼回可读上下文 | `merge.go`、`merge_overlap.go`、`merge_faq.go`、`merge_expand.go`、`merge_history.go` |
 | v6 | ~620 | 装饰器插件 + 流式输出 | `next()` 先行装饰器 + 流式解耦 | `wiki_boost.go`、`into_chat_message.go`、`chat_completion_stream.go` |
 
-> v0–v3 行数为实测值（每版自包含，相邻版本刻意保留大量相同代码，便于
+> v0–v4 行数为实测值（每版自包含，相邻版本刻意保留大量相同代码，便于
 > diff 看增量）；未实现版本的行数为设计阶段的粗略估计。
 
 ## 算法参数速查表
@@ -172,16 +172,17 @@ Mock 优先、每版本独立可运行），但覆盖 WeKnora 的不同子系统
 
 ## 项目状态
 
-当前进度：**v3 已完成**（2026-07-24）— 向量+BM25 两路并行、按引擎归一化、
-RRF 融合（k=60，0.7/0.3）、低召回启发式查询扩展。语义题 q7 被两路弱信号的
-RRF 叠加救回（7/9）；近重复对首次同时进入候选池，v4 MMR 的问题由此真实
-产生。见 [docs/v3-混合检索与RRF融合.md](./docs/v3-混合检索与RRF融合.md)。
+当前进度：**v4 已完成**（2026-07-24）— cross-encoder 统一重打分抹平量纲
+混杂，复合分数（0.6/0.3/0.1 + 位置先验）+ 三层阈值安全网 + MMR（λ=0.7）。
+q5 翻正、q8 排序债还清；q4 出现「诚实的回归」——精排滤掉了只答半个问题的
+sdk-03，暴露出 q3/q4 真正需要的是 v5 的碎片重组而非排序。
+见 [docs/v4-精排与MMR多样性.md](./docs/v4-精排与MMR多样性.md)。
 
 - [x] v0_naive_rag（131 行，mock 评测 5/9，缺口即 v1–v6 的存在理由）
 - [x] v1_pipeline_engine（296 行，评测与 v0 逐题一致——重构不变量成立）
 - [x] v2_query_understanding（470 行，mock 评测 6/9——q8 被查询改写救回）
 - [x] v3_hybrid_fusion（685 行，mock 评测 7/9——q7 被 RRF 融合救回）
-- [ ] v4_rerank_mmr
+- [x] v4_rerank_mmr（818 行，mock 评测 7/9——q5 翻正，q4 诚实回归给 v5 铺路）
 - [ ] v5_merge
 - [ ] v6_boost_stream
 
