@@ -372,7 +372,12 @@ goroutine 消费流并往外发事件后立刻 `return next()`，不等流跑完
   next() 先行」的组合，它的 next() 打到的是终止 no-op，而非「调用 next() 去
   执行 Rerank」——Rerank(:323) 是外层，做完工作后在 rerank.go:265
   return next() 交棒）
-- [ ] v2_query_understanding
+- [x] v2_query_understanding（2026-07-24 完成。QUERY_UNDERSTAND 事件先于检索，
+  结构化 {rewrite_query, intent} + 三层解析容错 + 全路径降级（对照
+  query_understand.go:61,321-407）+ 意图门控（chat_manage.go:102-109）。
+  mock 评测 6/9：q8 靠省略补全翻正，但 faq-04 仍排在 faq-03 前——「召回救回、
+  排序未救」的伏笔留给 v4。开发实录：模板含 JSON 示例时 str.format 会炸，
+  这正是 WeKnora 用 {{}} 手工替换的原因，已加回归测试钉死）
 - [ ] v3_hybrid_fusion
 - [ ] v4_rerank_mmr
 - [ ] v5_merge

@@ -111,14 +111,14 @@ def build_handler(plugins):
 |------|------|----------|----------|--------------|
 | v0 | 131 | 单路向量检索 | 检索+拼接就是最小骨架 | （刻意省略，作为基线） |
 | v1 | 296 | Plugin / EventManager / `next()` | 中间件链的秘密就是 `next()` | `chat_pipeline.go:11-68` |
-| v2 | ~200 | 查询理解（LLM 改写+意图分类） | 检索前先花一次调用换准确率 | `query_understand.go:58-161` |
+| v2 | 470 | 查询理解（LLM 改写+意图分类） | 检索前先花一次调用换准确率 | `query_understand.go:58-161` |
 | v3 | ~320 | 混合检索 + 归一化 + RRF + 查询扩展 | RRF 只看排名不看分数 | `search.go`、`knowledgebase_search_fusion.go`、`normalizer.go`、`query_expansion.go` |
 | v4 | ~420 | 复合分数精排 + MMR 多样性 | 精排在合并之前，为效率而设计 | `rerank.go` |
 | v5 | ~550 | 父块还原/重叠拼接/FAQ/短块扩展 | 合并阶段把碎片拼回可读上下文 | `merge.go`、`merge_overlap.go`、`merge_faq.go`、`merge_expand.go`、`merge_history.go` |
 | v6 | ~620 | 装饰器插件 + 流式输出 | `next()` 先行装饰器 + 流式解耦 | `wiki_boost.go`、`into_chat_message.go`、`chat_completion_stream.go` |
 
-> v0/v1 行数为实测值（v0 核心链路约 70 行；v1 约 90 行与 v0 逐字相同，
-> 便于 diff 看结构增量）；未实现版本的行数为设计阶段的粗略估计。
+> v0–v2 行数为实测值（每版自包含，相邻版本刻意保留大量相同代码，便于
+> diff 看增量）；未实现版本的行数为设计阶段的粗略估计。
 
 ## 算法参数速查表
 
@@ -172,13 +172,13 @@ Mock 优先、每版本独立可运行），但覆盖 WeKnora 的不同子系统
 
 ## 项目状态
 
-当前进度：**v1 已完成**（2026-07-24）— 洋葱式中间件引擎就位，评测结果与
-v0 逐题一致（5/9），证明纯结构重构不改变行为；从 v2 起，新能力=往链上挂
-新插件。见 [docs/v1-洋葱中间件引擎.md](./docs/v1-洋葱中间件引擎.md)。
+当前进度：**v2 已完成**（2026-07-24）— 查询理解插件就位：LLM 改写 + 意图
+分类，历史依赖题 q8 被检索前的省略补全救回（6/9）；greeting/chitchat 意图
+直接跳过检索。见 [docs/v2-查询理解.md](./docs/v2-查询理解.md)。
 
 - [x] v0_naive_rag（131 行，mock 评测 5/9，缺口即 v1–v6 的存在理由）
 - [x] v1_pipeline_engine（296 行，评测与 v0 逐题一致——重构不变量成立）
-- [ ] v2_query_understanding
+- [x] v2_query_understanding（470 行，mock 评测 6/9——q8 被查询改写救回）
 - [ ] v3_hybrid_fusion
 - [ ] v4_rerank_mmr
 - [ ] v5_merge
