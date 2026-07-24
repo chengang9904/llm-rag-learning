@@ -45,25 +45,25 @@ WeKnora 生产代码里的具体参数（RRF k=60、MMR λ=0.7、复合分数权
     |
     v
 [v0: 朴素 RAG] ---------> "检索+拼接就是全部骨架"
-    |                      ~70 行
+    |                      131 行，5/9
     v
 [v1: 中间件引擎] -------> "next() 就是整个中间件系统的秘密"
-    |                      +Plugin/EventManager，~150 行
+    |                      +Plugin/EventManager，296 行，5/9（=v0，重构不变量）
     v
 [v2: 查询理解] ---------> "先花一次 LLM 调用换准确率"
-    |                      +QueryUnderstand，~200 行
+    |                      +QueryUnderstand，470 行，6/9（q8↑）
     v
 [v3: 混合检索+RRF] -----> "RRF 只比较排名，不比较分数"
-    |                      +BM25/归一化/RRF/查询扩展，~320 行
+    |                      +BM25/归一化/RRF/查询扩展，685 行，7/9（q7↑）
     v
 [v4: 精排+MMR] ---------> "相关性最高常常等于互相冗余"
-    |                      +复合分数/MMR，~420 行
+    |                      +复合分数/MMR，818 行，7/9（q5↑ q4↓诚实回归）
     v
 [v5: 合并四术] ---------> "检索给碎片，合并给上下文"
-    |                      +父块/重叠/FAQ/短块扩展，~550 行
+    |                      +父块/重叠/FAQ/短块扩展，1183 行，8/9（q4 治愈）
     v
 [v6: 装饰器+流式] ------> "next() 先行的装饰器 + 流式解耦"
-                           +WikiBoost模式/streaming，~620 行
+                           +TypeBoost/模板渲染/streaming，1256 行，8/9（=v5，架构收官）
 ```
 
 **推荐学习方式：**
@@ -81,11 +81,12 @@ pip install -r requirements.txt
 # 配置 API Key（可选——Mock 模式下多数版本不需要真实 Key）
 cp .env.example .env
 
-# 运行 v0：单条提问 / 跑完整评测集（--mock 无需任何 Key）
-python v0_naive_rag.py --query "如何重置青鸟的 API 密钥？" --mock
-python v0_naive_rag.py --eval --mock
+# 运行任意版本：单条提问 / 跑完整评测集（--mock 无需任何 Key）
+python v0_naive_rag.py --eval --mock          # 5/9 基线
+python v6_boost_stream.py --eval --mock       # 8/9 终态
+python v6_boost_stream.py --query "如何重置青鸟的 API 密钥？" --mock  # 流式输出
 
-# 单元测试（全部离线）
+# 单元测试（122 项，全部离线）
 python -m pytest tests/
 ```
 
@@ -115,10 +116,10 @@ def build_handler(plugins):
 | v3 | 685 | 混合检索 + 归一化 + RRF + 查询扩展 | RRF 只看排名不看分数 | `search.go`、`knowledgebase_search_fusion.go`、`normalizer.go`、`query_expansion.go` |
 | v4 | 818 | 复合分数精排 + MMR 多样性 | 精排在合并之前，为效率而设计 | `rerank.go` |
 | v5 | 1183 | 父块还原/重叠拼接/FAQ/短块扩展 | 合并阶段把碎片拼回可读上下文 | `merge.go`、`merge_overlap.go`、`merge_faq.go`、`merge_expand.go`、`merge_history.go` |
-| v6 | ~620 | 装饰器插件 + 流式输出 | `next()` 先行装饰器 + 流式解耦 | `wiki_boost.go`、`into_chat_message.go`、`chat_completion_stream.go` |
+| v6 | 1256 | 装饰器插件 + 模板渲染 + 流式输出 | `next()` 先行装饰器 + 流式解耦 | `wiki_boost.go`、`into_chat_message.go`、`chat_completion_stream.go` |
 
-> v0–v5 行数为实测值（每版自包含，相邻版本刻意保留大量相同代码，便于
-> diff 看增量）；未实现版本的行数为设计阶段的粗略估计。
+> 行数均为实测值。每版自包含，相邻版本刻意保留大量相同代码——
+> `diff v4_rerank_mmr.py v5_merge.py` 这样的对比能直接看到增量。
 
 ## 算法参数速查表
 
@@ -172,11 +173,12 @@ Mock 优先、每版本独立可运行），但覆盖 WeKnora 的不同子系统
 
 ## 项目状态
 
-当前进度：**v5 已完成**（2026-07-24）— 合并四术就位：父块还原、重叠拼接
-（文本匹配缝合）、FAQ 格式化、短块邻居扩展（350→850），外加历史片段注入与
-FILTER_TOP_K。评测判定升级为覆盖命中（sub_chunk_ids 账本），8/9——q4 回归
-治愈，q3 成为词面 mock 的诚实边界。
-见 [docs/v5-上下文合并四术.md](./docs/v5-上下文合并四术.md)。
+**课程完结**（2026-07-24）：v0–v6 全部完成，122 项离线测试通过。
+mock 基线从 5/9 演进到 8/9；q3 是词面 mock 的诚实边界（机制本身有
+「拼回=原文切片」的单测证明，真实模型下可达）。拿同一个问题跑 v0 和
+v6——从「210 字孤立片段直拼 prompt、一次性返回」到「822 字完整父块、
+结构化模板、流式到达」——这条链上每一段增量都能在 WeKnora 生产代码里
+找到对应的文件与行号。
 
 - [x] v0_naive_rag（131 行，mock 评测 5/9，缺口即 v1–v6 的存在理由）
 - [x] v1_pipeline_engine（296 行，评测与 v0 逐题一致——重构不变量成立）
@@ -184,7 +186,7 @@ FILTER_TOP_K。评测判定升级为覆盖命中（sub_chunk_ids 账本），8/9
 - [x] v3_hybrid_fusion（685 行，mock 评测 7/9——q7 被 RRF 融合救回）
 - [x] v4_rerank_mmr（818 行，mock 评测 7/9——q5 翻正，q4 诚实回归给 v5 铺路）
 - [x] v5_merge（1183 行，mock 评测 8/9——碎片拼回上下文，q4 治愈）
-- [ ] v6_boost_stream
+- [x] v6_boost_stream（1256 行，mock 评测 8/9——装饰器毕业 + 流式解耦，收官）
 
 ## License
 

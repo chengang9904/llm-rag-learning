@@ -403,4 +403,14 @@ goroutine 消费流并往外发事件后立刻 `return next()`，不等流跑完
   在 v4 就滤掉 deploy-02/03，拼接机制本身有「拼回=原文切片」的单测证明）——
   词面 mock 的诚实边界。踩坑记录：内容签名是「压缩空白」非「删除空白」
   （strings.Fields 语义），测试里钉了这个区别）
-- [ ] v6_boost_stream
+- [x] v6_boost_stream（2026-07-24 完成，课程收官。①PluginTypeBoost 替换
+  LoggingBoost：注册在 Rerank 之后、next() 先行、faq ×1.3、稳定重排（对照
+  wiki_boost.go:37-97；生产 boost wiki_page，课程语料无 wiki 故用 faq 演示；
+  快速路径保护 MMR 次序、boost 生效时全列表重排覆盖 MMR 的副作用均有单测）；
+  ②INTO_CHAT_MESSAGE：<context id="N"> 标签 + {{contexts}}/{{query}}/
+  {{language}} 模板渲染（into_chat_message.go:120-198 +
+  context_template.yaml:38-57；非检索意图走模板且用改写后 query）；
+  ③CHAT_COMPLETION_STREAM：fire-and-forget（chat_completion_stream.go:41-238，
+  threading+Queue ↔ goroutine+channel；门控生成器单测直接证明插件不等流）。
+  mock 评测 8/9 与 v5 覆盖集合逐题相同（跨版本回归测试断言）。全课程终态：
+  122 项测试，基线 5/9→8/9，q3 为词面 mock 的诚实边界）
