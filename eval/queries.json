@@ -54,7 +54,7 @@
     "query": "那超出之后呢？",
     "history": [
       { "role": "user", "content": "免费版每月的消息配额是多少？" },
-      { "role": "assistant", "content": "免费版每月包含 10 万条消息配额，单条消息最大 4 KB。" }
+      { "role": "assistant", "content": "免费版每月包含 10 万条消息配额，单条消息最大 4 KB。", "retrieved_chunk_ids": ["faq-03"] }
     ],
     "expect_chunk_ids": ["faq-03"],
     "note": "指代省略题：单看本轮查询根本不知道「超出」的是什么——超出配额（faq-03/faq-04）？消息体超长（err-02 的 E-4413）？结合历史才能确定问的是「免费版配额用尽后的行为」，答案在 faq-03。v0 不读历史，注定跑偏（词面上最像的是含「超出部分」的 faq-04，即答成专业版）；v2（带历史的查询改写）或 v5（历史相关片段合并）之后才能答对。history 字段与 corpus/history_sample.json 对应。"
