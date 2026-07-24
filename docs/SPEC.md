@@ -365,7 +365,13 @@ goroutine 消费流并往外发事件后立刻 `return next()`，不等流跑完
   仅关键词/仅语义语料）、history_sample.json、eval/queries.json 9 题覆盖 8 类
   场景。mock 评测检索命中 5/9，q3/q5/q7/q8 如预期答不好，逐题记录在
   docs/v0-朴素检索问答.md）
-- [ ] v1_pipeline_engine
+- [x] v1_pipeline_engine（2026-07-24 完成。Plugin/EventManager/右折叠洋葱链 +
+  Search/LoggingBoost/Generate 三插件，评测与 v0 逐题一致（5/9），重构不变量
+  由测试逐题断言。行号全部对照当日源码核实；一个重要澄清写进了
+  docs/v1-洋葱中间件引擎.md：WikiBoost 的「后置」地位来自「注册在后（内层）+
+  next() 先行」的组合，它的 next() 打到的是终止 no-op，而非「调用 next() 去
+  执行 Rerank」——Rerank(:323) 是外层，做完工作后在 rerank.go:265
+  return next() 交棒）
 - [ ] v2_query_understanding
 - [ ] v3_hybrid_fusion
 - [ ] v4_rerank_mmr
