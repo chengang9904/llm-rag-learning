@@ -1,0 +1,69 @@
+[
+  {
+    "id": "q1",
+    "scenario": "parent_restore",
+    "query": "青鸟的接入网关层和会话层分别负责什么？",
+    "expect_chunk_ids": ["arch-02"],
+    "note": "命中子块 arch-02 即算检索通过；但子块只是片段，完整语境在父块 arch-parent 里——v5 父块还原之前，回答只能基于孤立片段。"
+  },
+  {
+    "id": "q2",
+    "scenario": "faq",
+    "query": "如何重置青鸟的 API 密钥？",
+    "expect_chunk_ids": ["faq-02"],
+    "note": "FAQ 直接命中题。v5 之前 FAQ 块以原始 Q/A 文本混在普通资料里拼进 prompt，v5 起做 FAQ 专属格式化。"
+  },
+  {
+    "id": "q3",
+    "scenario": "overlap_merge",
+    "query": "在生产环境部署一套青鸟集群，完整步骤是什么？",
+    "expect_chunk_ids": ["deploy-01", "deploy-02", "deploy-03"],
+    "note": "完整步骤横跨三个相互重叠的块（第二步、第三步各出现两次）；v5 重叠拼接之前，要么步骤缺失、要么 prompt 里出现大段重复内容。"
+  },
+  {
+    "id": "q4",
+    "scenario": "short_chunk_expand",
+    "query": "Python SDK 的 publish 方法有哪些参数？qos 各取值分别是什么含义？",
+    "expect_chunk_ids": ["sdk-02", "sdk-03"],
+    "note": "publish 签名在 sdk-02，qos/ttl 取值语义在邻居 sdk-03（原文明确写着「见下一节」）；v5 短块邻居扩展之前，只命中其一时答案必然残缺。"
+  },
+  {
+    "id": "q5",
+    "scenario": "mmr_redundancy",
+    "query": "青鸟通过哪些机制保证消息可靠投递？",
+    "expect_chunk_ids": ["rel-v2-01"],
+    "note": "rel-v1-01 与 rel-v2-01 是刻意预埋的近重复内容；v4 MMR 之前，top-k 会同时塞进两条几乎一样的资料，挤占其他有效上下文（如 arch-03 的 ACK 状态机细节）。"
+  },
+  {
+    "id": "q6",
+    "scenario": "keyword_only",
+    "query": "调用发布接口返回 E-4703 是什么原因？该怎么处理？",
+    "expect_chunk_ids": ["err-02"],
+    "note": "错误码是典型的「关键词可精确命中、语义向量易漏检」内容——v3 混合检索的存在理由。注意：v0 的 --mock embedding 是字符 n-gram 哈希（本质词面匹配），反而能命中此题；真实语义向量下此题不稳定。"
+  },
+  {
+    "id": "q7",
+    "scenario": "semantic_only",
+    "query": "为什么我的消息突然发不出去了，客户端也没有报错？",
+    "expect_chunk_ids": ["bp-01"],
+    "note": "口语化问法与文档措辞（背压/静默挂起/高水位线）几乎无词面重叠，纯关键词检索必挂——向量检索的存在理由。v0 --mock（词面哈希）预期答不上；真实 embedding 预期命中。"
+  },
+  {
+    "id": "q8",
+    "scenario": "history_dependent",
+    "query": "那超出之后呢？",
+    "history": [
+      { "role": "user", "content": "免费版每月的消息配额是多少？" },
+      { "role": "assistant", "content": "免费版每月包含 10 万条消息配额，单条消息最大 4 KB。" }
+    ],
+    "expect_chunk_ids": ["faq-03"],
+    "note": "指代省略题：单看本轮查询根本不知道「超出」的是什么——超出配额（faq-03/faq-04）？消息体超长（err-02 的 E-4413）？结合历史才能确定问的是「免费版配额用尽后的行为」，答案在 faq-03。v0 不读历史，注定跑偏（词面上最像的是含「超出部分」的 faq-04，即答成专业版）；v2（带历史的查询改写）或 v5（历史相关片段合并）之后才能答对。history 字段与 corpus/history_sample.json 对应。"
+  },
+  {
+    "id": "q9",
+    "scenario": "keyword_only",
+    "query": "QN_MAX_INFLIGHT 的默认值是多少？",
+    "expect_chunk_ids": ["err-03"],
+    "note": "配置项名是精确 token，第二道关键词命中题；兼作 v3 查询扩展（分隔符切分、引号短语）的演示素材。"
+  }
+]

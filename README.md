@@ -81,8 +81,12 @@ pip install -r requirements.txt
 # 配置 API Key（可选——Mock 模式下多数版本不需要真实 Key）
 cp .env.example .env
 
-# 运行任意版本（尚未实现，见下方「当前进度」）
-python v0_naive_rag.py
+# 运行 v0：单条提问 / 跑完整评测集（--mock 无需任何 Key）
+python v0_naive_rag.py --query "如何重置青鸟的 API 密钥？" --mock
+python v0_naive_rag.py --eval --mock
+
+# 单元测试（全部离线）
+python -m pytest tests/
 ```
 
 ## 核心模式
@@ -105,7 +109,7 @@ def build_handler(plugins):
 
 | 版本 | 行数 | 新增机制 | 核心洞察 | 对照 WeKnora |
 |------|------|----------|----------|--------------|
-| v0 | ~70 | 单路向量检索 | 检索+拼接就是最小骨架 | （刻意省略，作为基线） |
+| v0 | 131 | 单路向量检索 | 检索+拼接就是最小骨架 | （刻意省略，作为基线） |
 | v1 | ~150 | Plugin / EventManager / `next()` | 中间件链的秘密就是 `next()` | `chat_pipeline.go:11-68` |
 | v2 | ~200 | 查询理解（LLM 改写+意图分类） | 检索前先花一次调用换准确率 | `query_understand.go:58-161` |
 | v3 | ~320 | 混合检索 + 归一化 + RRF + 查询扩展 | RRF 只看排名不看分数 | `search.go`、`knowledgebase_search_fusion.go`、`normalizer.go`、`query_expansion.go` |
@@ -113,7 +117,8 @@ def build_handler(plugins):
 | v5 | ~550 | 父块还原/重叠拼接/FAQ/短块扩展 | 合并阶段把碎片拼回可读上下文 | `merge.go`、`merge_overlap.go`、`merge_faq.go`、`merge_expand.go`、`merge_history.go` |
 | v6 | ~620 | 装饰器插件 + 流式输出 | `next()` 先行装饰器 + 流式解耦 | `wiki_boost.go`、`into_chat_message.go`、`chat_completion_stream.go` |
 
-> 行数为实现后补充的实测值，当前均为设计阶段的粗略估计。
+> v0 行数为实测值（核心链路约 70 行，其余为 --mock/--eval 辅助）；
+> 未实现版本的行数为设计阶段的粗略估计。
 
 ## 算法参数速查表
 
@@ -167,9 +172,11 @@ Mock 优先、每版本独立可运行），但覆盖 WeKnora 的不同子系统
 
 ## 项目状态
 
-当前进度：**规划阶段** — 已完成 SPEC.md 与项目骨架，尚未实现任何版本。
+当前进度：**v0 已完成**（2026-07-24）— 共享语料（青鸟消息推送服务知识库，
+24 chunk）与 9 题固定评测集已就绪，v0 在 mock 模式下检索命中 5/9，答不好的
+q3/q5/q7/q8 逐题分析见 [docs/v0-朴素检索问答.md](./docs/v0-朴素检索问答.md)。
 
-- [ ] v0_naive_rag
+- [x] v0_naive_rag（131 行，mock 评测 5/9，缺口即 v1–v6 的存在理由）
 - [ ] v1_pipeline_engine
 - [ ] v2_query_understanding
 - [ ] v3_hybrid_fusion

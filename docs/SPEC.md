@@ -360,7 +360,11 @@ goroutine 消费流并往外发事件后立刻 `return next()`，不等流跑完
 
 ## 进度追踪（随开发更新）
 
-- [ ] v0_naive_rag
+- [x] v0_naive_rag（2026-07-24 完成。同批交付贯穿全程的语料与评测集：
+  corpus/docs/ 8 份文档、chunks.json 24 条（含父子块/FAQ/重叠块/短块/近重复对/
+  仅关键词/仅语义语料）、history_sample.json、eval/queries.json 9 题覆盖 8 类
+  场景。mock 评测检索命中 5/9，q3/q5/q7/q8 如预期答不好，逐题记录在
+  docs/v0-朴素检索问答.md）
 - [ ] v1_pipeline_engine
 - [ ] v2_query_understanding
 - [ ] v3_hybrid_fusion
